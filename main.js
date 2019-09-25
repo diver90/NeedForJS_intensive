@@ -14,20 +14,46 @@ const keys = {
     ArrowRight: false,
     ArrowLeft: false
 };
+
+Object.preventExtensions(keys); //запрет на добавление новых свойств в keys
+
 const setting = {
     start: false,
     score: 0,
     speed: 3,
     traffic: 3
 };
+/*
+const sounds = {
+    backgroundMusic: './audio/music.mp3',
+    gameOver: './audio/gameover.mp3',
+    crash: './audio/crash.mp3',
+    startGame: './audio/start.mp3'
+};
+*/
+
+let backgroundMusic = new Audio('./audio/music.mp3');
+let gameOver = new Audio('./audio/gameover.mp3');
+let crash = new Audio('./audio/crash.mp3');
+let startSound = new Audio('./audio/start.mp3');
 
 function getQuantityElementElements(heightElement) {
     return document.documentElement.clientHeight / heightElement + 1;
 }
 
+function playMusic(track) {
+    track.play();
+}
+
+function stopMusic(track) {
+    track.pause();
+    track.currentTime = 0;
+}
+
 function startGame() {
     start.classList.add('hide');
-    for (let i = 0; i < getQuantityElementElements(100); i++) {
+    gameArea.innerHTML = '';
+      for (let i = 0; i < getQuantityElementElements(100); i++) {
         const line = document.createElement('div');
         line.classList.add('line');
         line.style.top = (i * 100) + 'px';
@@ -44,14 +70,23 @@ function startGame() {
         enemy.style.background = 'tranparent url("./images/enemy.png") center / cover no-repeat';
         gameArea.appendChild(enemy);
     }
+    setting.score = 0;
     setting.start = true;
     gameArea.appendChild(car);
+    car.style = gameArea.offsetWidth/2 - car.offsetWidth/2;
+    car.style.top= 'auto';
+    car.style.bottom = '10px';
     setting.x = car.offsetLeft;
     setting.y = car.offsetTop;
     requestAnimationFrame(playGame);
+    stopMusic(backgroundMusic);
+    playMusic(startSound);
+    playMusic(backgroundMusic);
 }
 
 function playGame() {
+    setting.score += setting.speed;
+    score.innerHTML = 'SCORE<br> ' + setting.score;
     moveRoad();
     moveEnemy();
     if (setting.start) {
@@ -100,6 +135,20 @@ function moveRoad(){
 function moveEnemy () {
     let enemy = document.querySelectorAll('.enemy');
     enemy.forEach(function(item){
+        let carRect = car.getBoundingClientRect();
+        let enemyRect = item.getBoundingClientRect();
+        if (carRect.top <= enemyRect.bottom &&
+             carRect.right >= enemyRect.left &&
+             carRect.left <= enemyRect.right &&
+             carRect.bottom >= enemyRect.top) {
+            setting.start = false;
+            console.log('ДТП');
+            start.classList.remove('hide');
+            start.style.top = score.offsetHeight;
+            playMusic(crash);
+            playMusic(gameOver);
+            stopMusic(backgroundMusic);
+        }
         item.y += setting.speed / 2;
         item.style.top = item.y + 'px' ;
         if (item.y >= document.documentElement.clientHeight){
